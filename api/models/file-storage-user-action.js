@@ -33,12 +33,16 @@ function associate({
     foreignKey: 'userId',
   });
 
-  FileStorageUserAction.addScope('withUserIdentity', {
-    include: {
-      model: User,
-      required: true,
-      include: { model: UAAIdentity, required: true },
-    },
+  FileStorageUserAction.addScope('withFileAndUser', {
+    order: [['createdAt', 'DESC']],
+    include: [
+      {
+        model: User,
+        required: true,
+        include: { model: UAAIdentity, required: true },
+      },
+      { model: FileStorageFile, required: true },
+    ],
   });
 }
 
@@ -66,7 +70,16 @@ function define(sequelize, DataTypes) {
   );
 
   FileStorageUserAction.associate = associate;
-
+  FileStorageUserAction.getServiceActions = (fileStorageServiceId) =>
+    FileStorageUserAction.scope('withFileAndUser').findAll({
+      where: { fileStorageServiceId },
+    });
+  FileStorageUserAction.getFileActions = (fileStorageFileId) =>
+    FileStorageUserAction.scope('withFileAndUser').findAll({
+      where: {
+        fileStorageFileId,
+      },
+    });
   FileStorageUserAction.ACTION_TYPES = ACTION_TYPES;
   FileStorageUserAction.METHODS = METHODS;
 
